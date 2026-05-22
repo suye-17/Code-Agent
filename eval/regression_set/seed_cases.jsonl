@@ -1,0 +1,5 @@
+{"id": "buggy_calc", "repo": "buggy_calc", "task": "There are failing tests in this directory. Find the bug in calc.py and fix it. Then run pytest to verify."}
+{"id": "string_utils", "repo": "string_utils", "task": "There are failing tests in this directory. Find the bug in strings.py and fix it. Then run pytest to verify."}
+{"id": "fizzbuzz", "repo": "fizzbuzz", "task": "Tests in test_fizzbuzz.py are failing. Find and fix the bug in fizzbuzz.py. Then run pytest to verify."}
+{"id": "factorial", "repo": "factorial", "task": "Tests in test_fact.py are failing. Find and fix the bug in fact.py. Then run pytest to verify."}
+{"id": "off_by_one", "repo": "off_by_one", "task": "Tests in test_main.py are failing. The bug spans multiple files - read main.py and util.py to understand the call chain. Fix the bug and run pytest to verify."}
