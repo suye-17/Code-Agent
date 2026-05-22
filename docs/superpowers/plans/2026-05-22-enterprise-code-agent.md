@@ -232,11 +232,14 @@ mypy = "^1.10"
 - [ ] **Step 3: .env.example 与 .gitignore**
 
 ```bash
-# .env.example
+# .env.example  (committed, sk-xxxx placeholder)
 DEEPSEEK_API_KEY=sk-xxxx
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 DAILY_BUDGET_CNY=30
+MODEL=deepseek-v4-flash
 ```
+
+`.env`（实际密钥，gitignored，**永远不要 commit**）由用户本地填写。
 
 ```gitignore
 .venv/
@@ -328,10 +331,11 @@ class LLMClient:
         return self.in_hit / total if total else 0.0
 
     def chat(self, messages: list[dict], tools: list[dict] | None = None,
-             model: str = "deepseek-v4-flash") -> dict[str, Any]:
+             model: str | None = None) -> dict[str, Any]:
         if self.spent >= self.budget:
             raise BudgetExceeded(f"daily budget {self.budget} CNY hit; spent {self.spent:.4f}")
-        payload = {"model": model, "messages": messages}
+        payload = {"model": model or os.environ.get("MODEL", "deepseek-v4-flash"),
+                   "messages": messages}
         if tools: payload["tools"] = tools
         with httpx.Client(timeout=120) as c:
             r = c.post(f"{self.base}/chat/completions",
