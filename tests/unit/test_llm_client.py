@@ -47,8 +47,8 @@ def test_three_tier_billing_accumulates_correctly(fake_env):
         instance = MC.return_value.__enter__.return_value
         instance.post.return_value = _mock_response(in_hit=1_000_000, in_miss=1_000_000, out=1_000_000)
         client.chat([{"role": "user", "content": "x"}])
-    # Expected cost: 1M*0.02 + 1M*1.0 + 1M*2.0 = 3.02 CNY... but budget=1.0 so first call passes (pre-call check)
-    # then second call should fail
+    # 期望开销：1M*0.02 + 1M*1.0 + 1M*2.0 = 3.02 元
+    # 由于预算检查在请求前进行，首次调用此时仍能放行；下一次再调才会熔断
     assert client.in_hit == 1_000_000
     assert client.in_miss == 1_000_000
     assert client.out_tok == 1_000_000
@@ -59,9 +59,9 @@ def test_budget_breaker_after_overspend(fake_env):
     client = LLMClient(state_path=fake_env / "spend.json")
     with patch("httpx.Client") as MC:
         instance = MC.return_value.__enter__.return_value
-        instance.post.return_value = _mock_response(in_hit=0, in_miss=2_000_000, out=0)  # 2.0 CNY
-        client.chat([{"role": "user", "content": "x"}])  # pushes spent to 2.0, budget=1.0
-    # next call must fail BEFORE making HTTP call
+        instance.post.return_value = _mock_response(in_hit=0, in_miss=2_000_000, out=0)  # 累计花销 2.0 元，超过预算 1.0
+        client.chat([{"role": "user", "content": "x"}])  # 首次调用花销刚好越线
+    # 此次调用必须在发出 HTTP 请求前就被熔断
     with pytest.raises(BudgetExceeded):
         client.chat([{"role": "user", "content": "y"}])
 

@@ -3,14 +3,14 @@ from typing import Any, ClassVar
 
 
 class Tool(ABC):
-    """Abstract base for all agent tools.
+    """所有 Agent 工具的抽象基类。
 
-    Subclasses define class attributes:
-      - name: function-call identifier (snake_case, must match LLM schema)
-      - description: 1-line natural language description for the LLM
-      - parameters: JSON Schema (object) describing run() kwargs
+    子类需要定义三个类属性：
+      - name: function-calling 调用名（snake_case，必须与 LLM schema 一致）
+      - description: 一行自然语言描述，会传给 LLM 用于决策何时调用
+      - parameters: JSON Schema（object），描述 run() 的入参
 
-    And implement run() with the actual side effect / computation.
+    并实现 run()：执行真正的副作用 / 计算。
     """
 
     name: ClassVar[str]
@@ -21,7 +21,7 @@ class Tool(ABC):
     def run(self, **kwargs: Any) -> Any: ...
 
     def schema(self) -> dict:
-        """Return OpenAI function-calling tool schema."""
+        """返回 OpenAI function-calling 标准 schema。"""
         return {
             "type": "function",
             "function": {

@@ -1,4 +1,4 @@
-"""Two-file bug: caller assumes 1-indexed, callee uses 0-indexed list."""
+"""跨文件 bug：调用方按 1-indexed 用，被调用方按 0-indexed 实现。"""
 
 
 def get_item(lst, idx):

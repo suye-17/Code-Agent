@@ -1,9 +1,9 @@
 def fizzbuzz(n):
-    """Return FizzBuzz output for numbers 1..n as a list of strings."""
+    """返回 1..n 的 FizzBuzz 序列（字符串列表）。"""
     out = []
     for i in range(1, n + 1):
         if i % 3 == 0 and i % 5 == 0:
-            out.append("Fizz")  # BUG: should be "FizzBuzz"
+            out.append("Fizz")  # BUG：应该是 "FizzBuzz"
         elif i % 3 == 0:
             out.append("Fizz")
         elif i % 5 == 0:

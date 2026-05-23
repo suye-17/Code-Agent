@@ -78,7 +78,7 @@ class Grep(Tool):
                 timeout=30,
             )
         except FileNotFoundError:
-            # ripgrep not installed; fall back to grep
+            # 系统未安装 ripgrep，降级使用 BSD/GNU grep
             r = subprocess.run(
                 ["grep", "-rn", pattern, path],
                 capture_output=True,

@@ -17,7 +17,7 @@ def load_env():
 
 
 def test_agent_fixes_calc_bug(tmp_path):
-    """End-to-end: copy buggy_calc to tmp, agent fixes it, pytest passes."""
+    """端到端：把 buggy_calc 拷到临时目录，让 Agent 修好，再用 pytest 验证。"""
     from agent.orchestrator.react import ReActAgent
 
     src = Path(__file__).parent.parent / "toy_cases" / "buggy_calc"
@@ -41,7 +41,7 @@ def test_agent_fixes_calc_bug(tmp_path):
 
 
 def test_max_steps_terminates_cleanly(tmp_path):
-    """Agent must not infinite-loop; should return within step budget."""
+    """Agent 不能死循环：超过 max_steps 也必须正常返回。"""
     from agent.orchestrator.react import ReActAgent
 
     (tmp_path / "x.txt").write_text("trivial")

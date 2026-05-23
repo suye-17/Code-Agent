@@ -1,5 +1,5 @@
 def reverse_string(s):
-    # BUG: only reverses first half
+    # BUG：只反转了前半段
     half = len(s) // 2
     return s[:half][::-1] + s[half:]
 
