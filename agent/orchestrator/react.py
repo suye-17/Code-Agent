@@ -14,6 +14,7 @@ from agent.llm.client import LLMClient
 from agent.tools.base import Tool
 from agent.tools.exec import RunShell
 from agent.tools.fs import Grep, ListDir, ReadFile, WriteFile
+from agent.tools.test import RunTest
 
 # system prompt 放在最前并保持不可变，是命中 DeepSeek prefix-cache 的前提。
 # 一旦这段字符串发生哪怕一个字节的改动，缓存命中率就会从 ~80% 跌到 0。
@@ -31,7 +32,7 @@ SYSTEM_PROMPT = (
 
 
 def _default_tools() -> list[Tool]:
-    return [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell()]
+    return [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell(), RunTest()]
 
 
 class ReActAgent:

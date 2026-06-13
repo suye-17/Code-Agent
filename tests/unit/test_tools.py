@@ -3,6 +3,7 @@ import pytest
 from agent.tools.base import Tool  # noqa: F401
 from agent.tools.exec import RunShell
 from agent.tools.fs import Grep, ListDir, ReadFile, WriteFile
+from agent.tools.test import RunTest
 
 
 def test_tool_schema_shape():
@@ -74,8 +75,53 @@ def test_run_shell_timeout():
     assert "TIMEOUT" in r["stderr"].upper()
 
 
+def test_run_test_passes_pytest_suite(tmp_path):
+    (tmp_path / "test_ok.py").write_text("def test_ok():\n    assert 1 + 1 == 2\n")
+
+    r = RunTest().run(path=str(tmp_path), timeout=5)
+
+    assert r["passed"] is True
+    assert r["returncode"] == 0
+    assert r["timed_out"] is False
+    assert "passed" in r["stdout_tail"]
+    assert r["stderr_tail"] == ""
+    assert r["elapsed_s"] >= 0
+
+
+def test_run_test_reports_pytest_failure(tmp_path):
+    (tmp_path / "test_fail.py").write_text("def test_fail():\n    assert False\n")
+
+    r = RunTest().run(path=str(tmp_path), timeout=5, max_output_chars=200)
+
+    assert r["passed"] is False
+    assert r["returncode"] != 0
+    assert r["timed_out"] is False
+    assert "FAILED" in r["stdout_tail"] or "failed" in r["stdout_tail"]
+    assert len(r["stdout_tail"]) <= 200
+
+
+def test_run_test_reports_timeout(tmp_path):
+    (tmp_path / "test_slow.py").write_text(
+        "import time\n\ndef test_slow():\n    time.sleep(2)\n"
+    )
+
+    r = RunTest().run(path=str(tmp_path), timeout=1)
+
+    assert r["passed"] is False
+    assert r["returncode"] == -1
+    assert r["timed_out"] is True
+    assert "TIMEOUT" in r["stderr_tail"]
+
+
 def test_all_tools_have_unique_names():
-    tools = [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell()]
+    tools = [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell(), RunTest()]
     names = [t.name for t in tools]
     assert len(names) == len(set(names))
-    assert set(names) == {"read_file", "write_file", "list_dir", "grep", "run_shell"}
+    assert set(names) == {
+        "read_file",
+        "write_file",
+        "list_dir",
+        "grep",
+        "run_shell",
+        "run_test",
+    }
