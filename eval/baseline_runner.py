@@ -24,6 +24,57 @@ CASES_FILE = ROOT / "eval" / "regression_set" / "seed_cases.jsonl"
 REPORTS_DIR = ROOT / "eval" / "reports"
 
 
+def summarize_rows(rows: list[dict]) -> dict:
+    """汇总 baseline 行数据，供报告和单测复用。"""
+    total = len(rows)
+    passed = sum(r["passed"] for r in rows)
+    total_spend = round(sum(r["spend_cny"] for r in rows), 6)
+    total_hit = sum(r["tokens_in_hit"] for r in rows)
+    total_miss = sum(r["tokens_in_miss"] for r in rows)
+    token_total = total_hit + total_miss
+    return {
+        "total": total,
+        "passed": passed,
+        "pass_rate": passed / total if total else 0.0,
+        "total_spend": total_spend,
+        "total_hit": total_hit,
+        "total_miss": total_miss,
+        "cache_hit_rate": total_hit / token_total if token_total else 0.0,
+    }
+
+
+def render_report(rows: list[dict], generated_at: str | None = None) -> str:
+    """渲染 B0 baseline markdown 报告。"""
+    summary = summarize_rows(rows)
+    generated_at = generated_at or time.strftime("%Y-%m-%d %H:%M:%S")
+
+    md = []
+    md.append("# Phase 1 Baseline (B0): naive ReAct + full file reads\n")
+    md.append(f"**Date:** {generated_at}  ")
+    md.append(f"**Cases:** {summary['total']}  ")
+    md.append(
+        f"**Pass rate:** {summary['passed']}/{summary['total']} = "
+        f"{summary['pass_rate']:.0%}  "
+    )
+    md.append(f"**Total spend:** ¥{summary['total_spend']:.4f}  ")
+    md.append(f"**Cache hit rate:** {summary['cache_hit_rate']:.1%}\n")
+    md.append("| id | pass | time(s) | spend (¥) | in_hit | in_miss | out | pytest tail |")
+    md.append("|----|------|---------|-----------|--------|---------|-----|-------------|")
+    for r in rows:
+        mark = "PASS" if r["passed"] else "FAIL"
+        md.append(
+            f"| {r['id']} | {mark} | {r['elapsed_s']} | {r['spend_cny']} | "
+            f"{r['tokens_in_hit']} | {r['tokens_in_miss']} | {r['tokens_out']} | "
+            f"`{r['pytest_tail'][:80]}` |"
+        )
+    if any(r["agent_err"] for r in rows):
+        md.append("\n### Agent errors")
+        for r in rows:
+            if r["agent_err"]:
+                md.append(f"- **{r['id']}**: {r['agent_err']}")
+    return "\n".join(md) + "\n"
+
+
 def run_one(case: dict, work_root: Path) -> dict:
     """跑单个用例，返回该用例的通过/失败、耗时、花销增量。"""
     from agent.orchestrator.react import ReActAgent
@@ -82,39 +133,7 @@ def main() -> None:
     cases = [json.loads(line) for line in CASES_FILE.read_text().splitlines() if line.strip()]
     rows = [run_one(c, work_root) for c in cases]
 
-    # 汇总：通过率、总花销、整体缓存命中率
-    passed = sum(r["passed"] for r in rows)
-    total = len(rows)
-    total_spend = sum(r["spend_cny"] for r in rows)
-    total_hit = sum(r["tokens_in_hit"] for r in rows)
-    total_miss = sum(r["tokens_in_miss"] for r in rows)
-    hit_rate = total_hit / (total_hit + total_miss) if (total_hit + total_miss) else 0.0
-
-    # 拼 markdown 报告：顶部总览 + 每用例一行的表格
-    md = []
-    md.append("# Phase 1 Baseline (B0): naive ReAct + full file reads\n")
-    md.append(f"**Date:** {time.strftime('%Y-%m-%d %H:%M:%S')}  ")
-    md.append(f"**Cases:** {total}  ")
-    md.append(f"**Pass rate:** {passed}/{total} = {passed/total:.0%}  ")
-    md.append(f"**Total spend:** ¥{total_spend:.4f}  ")
-    md.append(f"**Cache hit rate:** {hit_rate:.1%}\n")
-    md.append("| id | pass | time(s) | spend (¥) | in_hit | in_miss | out | pytest tail |")
-    md.append("|----|------|---------|-----------|--------|---------|-----|-------------|")
-    for r in rows:
-        mark = "✅" if r["passed"] else "❌"
-        md.append(
-            f"| {r['id']} | {mark} | {r['elapsed_s']} | {r['spend_cny']} | "
-            f"{r['tokens_in_hit']} | {r['tokens_in_miss']} | {r['tokens_out']} | "
-            f"`{r['pytest_tail'][:80]}` |"
-        )
-    # 如果有 Agent 异常，单独列一节方便排查
-    if any(r["agent_err"] for r in rows):
-        md.append("\n### Agent errors")
-        for r in rows:
-            if r["agent_err"]:
-                md.append(f"- **{r['id']}**: {r['agent_err']}")
-
-    report = "\n".join(md) + "\n"
+    report = render_report(rows)
     out_path = REPORTS_DIR / f"baseline_{time.strftime('%Y%m%d_%H%M%S')}.md"
     out_path.write_text(report)
     print(report)
