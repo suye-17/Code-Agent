@@ -35,6 +35,9 @@ def _default_tools() -> list[Tool]:
     return [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell(), RunTest()]
 
 
+MAX_TOOL_OUTPUT_CHARS = 8000
+
+
 class ReActAgent:
     """单层 ReAct 循环，自带步数预算与路径沙箱。
 
@@ -85,22 +88,59 @@ class ReActAgent:
     def _invoke_tool(self, name: str, args: dict[str, Any]) -> str:
         # 1. 未知工具：LLM 偶尔会幻觉出不存在的工具名，直接以 ERROR 字符串告知
         if name not in self.tools:
-            return f"ERROR: unknown tool {name!r}"
+            return self._tool_error(
+                name,
+                "UNKNOWN_TOOL",
+                f"unknown tool {name!r}",
+            )
         # 2. 仅当参数里出现 path 字段时才走沙箱（run_shell 的 cmd 不沙箱）
         if "path" in args:
             sandboxed = self._sandbox_path(str(args["path"]))
             if sandboxed is None:
-                return f"ERROR: path {args['path']!r} escapes workdir {self.workdir}"
+                return self._tool_error(
+                    name,
+                    "PATH_ESCAPE",
+                    f"path {args['path']!r} escapes workdir {self.workdir}",
+                )
             args = {**args, "path": sandboxed}
         # 3. 工具执行：所有异常都吞掉转成字符串，避免单次工具失败炸掉整个循环
         try:
             result = self.tools[name].run(**args)
         except Exception as e:
-            return f"ERROR: {type(e).__name__}: {e}"
-        # 4. 输出统一截断 8K 字符，防 LLM 误读大文件把 token 烧光
-        if isinstance(result, dict):
-            return json.dumps(result)[:8000]
-        return str(result)[:8000]
+            return self._tool_error(name, type(e).__name__, str(e))
+        return self._tool_success(name, result)
+
+    def _tool_success(self, name: str, result: Any) -> str:
+        return self._tool_payload(
+            {
+                "ok": True,
+                "tool": name,
+                "result": result,
+                "error_type": None,
+                "error_message": None,
+                "truncated": False,
+            }
+        )
+
+    def _tool_error(self, name: str, error_type: str, error_message: str) -> str:
+        return self._tool_payload(
+            {
+                "ok": False,
+                "tool": name,
+                "result": None,
+                "error_type": error_type,
+                "error_message": error_message,
+                "truncated": False,
+            }
+        )
+
+    def _tool_payload(self, payload: dict[str, Any]) -> str:
+        text = json.dumps(payload, ensure_ascii=False)
+        if len(text) <= MAX_TOOL_OUTPUT_CHARS:
+            return text
+
+        compact = {**payload, "result": str(payload["result"])[:7000], "truncated": True}
+        return json.dumps(compact, ensure_ascii=False)
 
     # ---- 主循环 -------------------------------------------------------------
 
@@ -128,10 +168,13 @@ class ReActAgent:
                 fn = call["function"]
                 try:
                     args = json.loads(fn.get("arguments") or "{}")
-                except json.JSONDecodeError:
-                    # 极少见：LLM 输出畸形 JSON。给空 dict，让工具自身报参数缺失
-                    args = {}
-                result = self._invoke_tool(fn["name"], args)
+                    result = self._invoke_tool(fn["name"], args)
+                except json.JSONDecodeError as e:
+                    result = self._tool_error(
+                        fn["name"],
+                        "JSON_DECODE_ERROR",
+                        str(e),
+                    )
                 # tool_call_id 必须原样回填，否则下一轮请求会被 API 拒绝
                 messages.append({
                     "role": "tool",

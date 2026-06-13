@@ -14,14 +14,15 @@ class RunShell(Tool):
         "properties": {
             "cmd": {"type": "string"},
             "timeout": {"type": "integer", "default": 60, "minimum": 1, "maximum": 600},
+            "cwd": {"type": "string"},
         },
         "required": ["cmd"],
     }
 
-    def run(self, cmd: str, timeout: int = 60) -> dict:
+    def run(self, cmd: str, timeout: int = 60, cwd: str | None = None) -> dict:
         try:
             r = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=timeout,
+                cmd, shell=True, capture_output=True, text=True, timeout=timeout, cwd=cwd,
             )
             return {"stdout": r.stdout, "stderr": r.stderr, "returncode": r.returncode}
         except subprocess.TimeoutExpired:

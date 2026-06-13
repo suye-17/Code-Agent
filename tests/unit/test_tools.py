@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from agent.tools.base import Tool  # noqa: F401
@@ -73,6 +75,29 @@ def test_run_shell_timeout():
     r = RunShell().run(cmd="sleep 5", timeout=1)
     assert r["returncode"] == -1
     assert "TIMEOUT" in r["stderr"].upper()
+
+
+def test_run_shell_uses_cwd(tmp_path):
+    (tmp_path / "marker.txt").write_text("from cwd")
+
+    r = RunShell().run(
+        cmd=(
+            f"{sys.executable} -c \"from pathlib import Path; "
+            "print(Path('marker.txt').read_text())\""
+        ),
+        timeout=5,
+        cwd=str(tmp_path),
+    )
+
+    assert r["returncode"] == 0
+    assert r["stdout"].strip() == "from cwd"
+
+
+def test_run_shell_schema_exposes_cwd():
+    schema = RunShell().schema()["function"]["parameters"]
+
+    assert "cwd" in schema["properties"]
+    assert schema["properties"]["cwd"]["type"] == "string"
 
 
 def test_run_test_passes_pytest_suite(tmp_path):
