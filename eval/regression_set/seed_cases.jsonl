@@ -3,3 +3,13 @@
 {"id": "fizzbuzz", "repo": "fizzbuzz", "task": "Tests in test_fizzbuzz.py are failing. Find and fix the bug in fizzbuzz.py. Then run pytest to verify."}
 {"id": "factorial", "repo": "factorial", "task": "Tests in test_fact.py are failing. Find and fix the bug in fact.py. Then run pytest to verify."}
 {"id": "off_by_one", "repo": "off_by_one", "task": "Tests in test_main.py are failing. The bug spans multiple files - read main.py and util.py to understand the call chain. Fix the bug and run pytest to verify."}
+{"id": "boolean_logic", "repo": "boolean_logic", "task": "Tests in test_logic.py are failing. Find the incorrect boolean condition in logic.py and fix it. Then run pytest to verify."}
+{"id": "list_utils", "repo": "list_utils", "task": "Tests in test_lists.py are failing. Fix first() in lists.py so it returns the expected item. Then run pytest to verify."}
+{"id": "dict_merge", "repo": "dict_merge", "task": "Tests in test_merge.py are failing. Fix merge_defaults() so overrides win over defaults. Then run pytest to verify."}
+{"id": "palindrome", "repo": "palindrome", "task": "Tests in test_text.py are failing. Fix palindrome handling in text.py so case and spaces are handled correctly. Then run pytest to verify."}
+{"id": "clamp", "repo": "clamp", "task": "Tests in test_numbers.py are failing. Fix clamp() in numbers.py so lower and upper bounds are applied correctly. Then run pytest to verify."}
+{"id": "median", "repo": "median", "task": "Tests in test_stats.py are failing. Fix median() in stats.py so both odd and even length lists work. Then run pytest to verify."}
+{"id": "parser", "repo": "parser", "task": "Tests in test_parser.py are failing. Fix parse_key_value() in parser.py so whitespace is stripped. Then run pytest to verify."}
+{"id": "csv_utils", "repo": "csv_utils", "task": "Tests in test_csv_utils.py are failing. Fix split_csv() so returned cells are trimmed. Then run pytest to verify."}
+{"id": "config_defaults", "repo": "config_defaults", "task": "Tests in test_config.py are failing. Fix get_timeout() so it returns a default timeout when missing. Then run pytest to verify."}
+{"id": "range_overlap", "repo": "range_overlap", "task": "Tests in test_ranges.py are failing. Fix overlaps() in ranges.py so it detects overlapping ranges correctly. Then run pytest to verify."}
