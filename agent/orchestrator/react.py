@@ -14,6 +14,7 @@ from agent.llm.client import LLMClient
 from agent.tools.base import Tool
 from agent.tools.exec import RunShell
 from agent.tools.fs import Grep, ListDir, ReadFile, WriteFile
+from agent.tools.search import SearchContext
 from agent.tools.test import RunTest
 
 # system prompt 放在最前并保持不可变，是命中 DeepSeek prefix-cache 的前提。
@@ -32,7 +33,7 @@ SYSTEM_PROMPT = (
 
 
 def _default_tools() -> list[Tool]:
-    return [ReadFile(), WriteFile(), ListDir(), Grep(), RunShell(), RunTest()]
+    return [ReadFile(), WriteFile(), ListDir(), Grep(), SearchContext(), RunShell(), RunTest()]
 
 
 MAX_TOOL_OUTPUT_CHARS = 8000
